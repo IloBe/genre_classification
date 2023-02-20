@@ -25,7 +25,6 @@ def go(config: DictConfig):
 
     # Download step
     if "download" in steps_to_execute:
-
         _ = mlflow.run(
             os.path.join(root_path, "download"),
             "main",
@@ -37,21 +36,46 @@ def go(config: DictConfig):
             },
         )
 
+    # Preprocess step
     if "preprocess" in steps_to_execute:
+        _ = mlflow.run(
+            os.path.join(root_path, "preprocess"),
+            "main",
+            parameters={
+                "input_artifact": "raw_data.parquet:latest",
+                "artifact_name": "preprocessed_data.csv",
+                "artifact_type": "preprocessed_data",
+                "artifact_description": "Preprocessed data"
+            },
+        )
 
-        ## YOUR CODE HERE: call the preprocess step
-        pass
-
+    # Check data step
     if "check_data" in steps_to_execute:
+        _ = mlflow.run(
+            os.path.join(root_path, "check_data"),
+            "main",
+            parameters={
+                "reference_artifact": config["data"]["reference_dataset"],
+                "sample_artifact": "preprocessed_data.csv:latest",
+                "ks_alpha": config["data"]["ks_alpha"]
+            },
+        )
 
-        ## YOUR CODE HERE: call the check_data step
-        pass
-
+    # Segregate (absondern, trennen) step
     if "segregate" in steps_to_execute:
+        _ = mlflow.run(
+            os.path.join(root_path, "segregate"),
+            "main",
+            parameters={
+                "input_artifact": "preprocessed_data.csv:latest",
+                "artifact_root": "",
+                "artifact_type": "",
+                "test_size": config['data']['test_size'],
+                "stratify:": config['data']['stratify']
+            },
+        )
 
-        ## YOUR CODE HERE: call the segregate step
-        pass
-
+    # RandomForest Classification step
     if "random_forest" in steps_to_execute:
 
         # Serialize decision tree configuration
@@ -60,13 +84,30 @@ def go(config: DictConfig):
         with open(model_config, "w+") as fp:
             fp.write(OmegaConf.to_yaml(config["random_forest_pipeline"]))
 
-        ## YOUR CODE HERE: call the random_forest step
-        pass
+        _ = mlflow.run(
+            os.path.join(root_path, "random_forest"),
+            "main",
+            parameters={
+                "train_data": "data_train.csv:latest",
+                "model_config": model_config,
+                "export_artifact": config['random_forest_pipeline']['export'],
+                "random_seed": config['main']['random_seed'],
+                "val_size": config['data']['test_size'],
+                "stratify": config['data']['stratify']
+            },
+        )
 
+    # Evaluate step
     if "evaluate" in steps_to_execute:
 
-        ## YOUR CODE HERE: call the evaluate step
-        pass
+        _ = mlflow.run(
+            os.path.join(root_path, "evaluate"),
+            "main",
+            parameters={
+                "model_export": config['random_forest_pipeline']['export'],
+                "test_data": "data_test.csv:latest"
+            },
+        )
 
 
 if __name__ == "__main__":
