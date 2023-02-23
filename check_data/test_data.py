@@ -28,7 +28,6 @@ def test_column_presence_and_type(data):
     assert set(data.columns.values).issuperset(set(required_columns.keys()))
 
     for col_name, format_verification_funct in required_columns.items():
-
         assert format_verification_funct(data[col_name]), f"Column {col_name} failed test {format_verification_funct}"
 
 
@@ -80,7 +79,6 @@ def test_column_ranges(data):
     }
 
     for col_name, (minimum, maximum) in ranges.items():
-
         assert data[col_name].dropna().between(minimum, maximum).all(), (
             f"Column {col_name} failed the test. Should be between {minimum} and {maximum}, "
             f"instead min={data[col_name].min()} and max={data[col_name].max()}"
@@ -110,7 +108,6 @@ def test_kolmogorov_smirnov(data, ks_alpha):
     alpha_prime = 1 - (1 - ks_alpha)**(1 / len(columns))
 
     for col in columns:
-
         ts, p_value = scipy.stats.ks_2samp(sample1[col], sample2[col])
 
         # NOTE: as always, the p-value should be interpreted as the probability of

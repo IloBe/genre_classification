@@ -1,26 +1,35 @@
 import mlflow
 import os
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, ListConfig
 
 
 # This automatically reads in the configuration
-@hydra.main(config_name='config')
+@hydra.main(config_name='config', config_path='.', version_base='1.3')
 def go(config: DictConfig):
 
     # Setup the wandb experiment. All runs will be grouped under this name
     os.environ["WANDB_PROJECT"] = config["main"]["project_name"]
     os.environ["WANDB_RUN_GROUP"] = config["main"]["experiment_name"]
 
-    # You can get the path at the root of the MLflow project with this:
+    # You can get the path at the root of the MLflow project 'genre_classifiation' with:
     root_path = hydra.utils.get_original_cwd()
 
     # Check which steps we need to execute
+    # my note, because the Udacity code is not working:
+    #print('--- config execute_steps, should be a list ---')
+    #print(config["main"]["execute_steps"])
+    #print(type(config["main"]["execute_steps"]))
+    # you should see:
+    #['download', 'preprocess', 'check_data', 'segregate', 'random_forest', 'evaluate']
+    #<class 'omegaconf.listconfig.ListConfig'>
+    #print('---------------')
+    
     if isinstance(config["main"]["execute_steps"], str):
         # This was passed on the command line as a comma-separated list of steps
         steps_to_execute = config["main"]["execute_steps"].split(",")
     else:
-        assert isinstance(config["main"]["execute_steps"], list)
+        assert isinstance(config["main"]["execute_steps"], ListConfig)
         steps_to_execute = config["main"]["execute_steps"]
 
     # Download step
@@ -68,16 +77,16 @@ def go(config: DictConfig):
             "main",
             parameters={
                 "input_artifact": "preprocessed_data.csv:latest",
-                "artifact_root": "",
+                "artifact_root": "data",
                 "artifact_type": "",
                 "test_size": config['data']['test_size'],
-                "stratify:": config['data']['stratify']
+                "stratify": config['data']['stratify']
             },
         )
 
     # RandomForest Classification step
     if "random_forest" in steps_to_execute:
-
+        
         # Serialize decision tree configuration
         model_config = os.path.abspath("random_forest_config.yml")
 
@@ -90,7 +99,7 @@ def go(config: DictConfig):
             parameters={
                 "train_data": "data_train.csv:latest",
                 "model_config": model_config,
-                "export_artifact": config['random_forest_pipeline']['export'],
+                "export_artifact": config['random_forest_pipeline']['export_artifact'],
                 "random_seed": config['main']['random_seed'],
                 "val_size": config['data']['test_size'],
                 "stratify": config['data']['stratify']
@@ -99,12 +108,11 @@ def go(config: DictConfig):
 
     # Evaluate step
     if "evaluate" in steps_to_execute:
-
         _ = mlflow.run(
             os.path.join(root_path, "evaluate"),
             "main",
             parameters={
-                "model_export": config['random_forest_pipeline']['export'],
+                "model_export": config['random_forest_pipeline']['export_artifact'] + '' + ':latest',
                 "test_data": "data_test.csv:latest"
             },
         )

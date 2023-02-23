@@ -13,7 +13,7 @@ from mlflow.models import infer_signature
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import roc_auc_score, plot_confusion_matrix
+from sklearn.metrics import roc_auc_score, ConfusionMatrixDisplay
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder, StandardScaler, FunctionTransformer
 import matplotlib.pyplot as plt
@@ -61,25 +61,27 @@ def go(args):
     logger.info("Scoring")
     score = roc_auc_score(y_val, pred_proba, average="macro", multi_class="ovo")
 
-    run.summary["AUC"] = score
+    run.summary["AUC (train)"] = score
 
     # Export if required
     if args.export_artifact != "null":
-
         export_model(run, pipe, used_columns, X_val, pred, args.export_artifact)
 
     # Some useful plots
+    logger.info("Computing feature importance (train)")
     fig_feat_imp = plot_feature_importance(pipe)
 
+    logger.info("Computing confusion matrix from estimator (train)")
     fig_cm, sub_cm = plt.subplots(figsize=(10, 10))
-    plot_confusion_matrix(
+
+    ConfusionMatrixDisplay.from_estimator(
         pipe,
-        X_val[used_columns],
+        X_val[used_columns], 
         y_val,
         ax=sub_cm,
         normalize="true",
         values_format=".1f",
-        xticks_rotation=90,
+        xticks_rotation='vertical',
     )
     fig_cm.tight_layout()
 

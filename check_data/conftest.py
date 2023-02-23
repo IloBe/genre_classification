@@ -26,6 +26,9 @@ def data(request):
         pytest.fail("--sample_artifact missing on command line")
 
     local_path = run.use_artifact(reference_artifact).file()
+    # mixed datatypes are delivered,
+    # see: https://pandas.pydata.org/docs/reference/api/pandas.errors.DtypeWarning.html
+    # cannot be used because the df shall be read-in and is unknown
     sample1 = pd.read_csv(local_path)
 
     local_path = run.use_artifact(sample_artifact).file()

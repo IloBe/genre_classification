@@ -2,9 +2,14 @@
 import argparse
 import logging
 import pathlib
-import wandb
 import requests
 import tempfile
+
+# get W&B with absolute 'import wandb' throws:
+# ModuleNotFoundError: No module named 'wandb'
+# => because of pip installation, which is not working;
+# has to be installed by conda
+import wandb
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
