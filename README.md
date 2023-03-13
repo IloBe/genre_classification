@@ -1,5 +1,5 @@
 # Udacity nanodegree MLOps: Genre Classification
-Final exercise 14 of Udacity MLOps class to inform about machine learning workflows by using the tools Hydra, MLflow and Weights&Biases.
+Exercise 14 of Udacity MLOps class chapter to inform about machine learning workflows by using the tools Hydra, MLflow and Weights&Biases.
 To use this release you need to be logged in into wandb (wandb login). 
 
 My note:<br>
